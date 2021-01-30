@@ -7,6 +7,13 @@ data.
 Requires CGO because data is kept in a sqlite database.
 
 ```shell
-go get gitlab.com/drep/netmon
+GO111MODULE=off go get gitlab.com/drep/netmon
+# or possibly
+go get gitlab.com/drep/netmon/./...
 ```
 
+(The `GO111MODULE=off` is to ensure your go modules list is not updated, if this is run inside a directory with a `go.mod` file.)
+Then you can run the newly installed utility:
+```shell
+netmon --url https://www.google.com
+```
