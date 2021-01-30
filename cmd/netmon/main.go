@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS call (
   created_at datetime DEFAULT current_timestamp,
   url text,
   status integer,
-  success boolean
+  success boolean,
+  error text
 );
 `
 
@@ -36,6 +37,7 @@ type Call struct {
 	CreatedAt time.Time `json:"createdAt" db:"created_at"`
 	Status    uint      `json:"status" db:"status"`
 	Success   bool      `json:"success" db:"success"`
+	Error     string    `json:"error" db:"error"`
 }
 
 func isUrlUp(url string) (int, error) {
@@ -99,9 +101,9 @@ func (db *Storage) applyMigrations() error {
 
 const sqlInsert = `
 INSERT INTO call
-(url, created_at, status, success)
+(url, created_at, status, success, error)
 VALUES
-(:url, :created_at, :status, :success)
+(:url, :created_at, :status, :success, :error)
 ;
 `
 
@@ -146,6 +148,7 @@ func run(args []string, _ io.Writer) error {
 			Status:    uint(statusCode),
 			Success:   headErr == nil,
 			CreatedAt: time.Now(),
+			Error:     headErr.Error(),
 		}
 		err = db.record(call)
 		if err != nil {
