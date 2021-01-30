@@ -32,9 +32,9 @@ func isUrlUp(url string) error {
 
 var urls = []string{
 	"https://www.cloudflare.com/",
-	"https://www.google.com",
-	"https://www.amazon.com",
-	"https://www.netflix.com",
+	"https://www.google.com/",
+	"https://www.amazon.com/",
+	"https://www.fastly.com/",
 }
 
 func run(args []string, _ io.Writer) error {
