@@ -148,7 +148,9 @@ func run(args []string, _ io.Writer) error {
 			Status:    uint(statusCode),
 			Success:   headErr == nil,
 			CreatedAt: time.Now(),
-			Error:     headErr.Error(),
+		}
+		if !call.Success {
+			call.Error = headErr.Error()
 		}
 		err = db.record(call)
 		if err != nil {

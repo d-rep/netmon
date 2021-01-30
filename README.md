@@ -21,3 +21,8 @@ Then you can run the newly installed utility:
 ```shell
 netmon --url https://www.google.com
 ```
+
+To query the database:
+```shell
+sqlite3 ~/netmon.db 'select * from call order by created_at desc limit 10;'
+```
