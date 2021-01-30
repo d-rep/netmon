@@ -8,7 +8,7 @@ Requires CGO because data is kept in a sqlite database.
 
 ```shell
 git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/"
-GO111MODULE=off GOPRIVATE=gitlab.com/drep go get gitlab.com/drep/netmon/./...
+GO111MODULE=off GOPRIVATE=gitlab.com/drep go get -u gitlab.com/drep/netmon/./...
 ```
 
 You may need to add this line to `~/.bashrc`:

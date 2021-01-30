@@ -4,20 +4,46 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
-	exitFail = 1
+	exitFail         = 1
+	databaseFilePath = "netmon.db"
 )
 
-func isUrlUp(url string) error {
+const schema = `
+CREATE TABLE call (
+  id integer PRIMARY KEY,
+  created_at datetime DEFAULT current_timestamp,
+  url text,
+  status integer,
+  success boolean
+);
+`
+
+// model to keep history in DB
+type Call struct {
+	ID        uint      `json:"id" db:"id"`
+	URL       string    `json:"url" db:"url"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+	Status    uint      `json:"status" db:"status"`
+	Success   bool      `json:"success" db:"success"`
+}
+
+func isUrlUp(url string) (int, error) {
 	resp, err := http.Head(url)
 	if err != nil {
-		return err
+		// happens on "connection refused"
+		return 0, err
 	}
-	// hmm, a HEAD should not have a response body to close
+	// a HEAD should not have a response body to close
 	defer func() {
 		err := resp.Body.Close()
 		if err != nil {
@@ -25,9 +51,15 @@ func isUrlUp(url string) error {
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("could not call URL \"%s\", got status %d", url, resp.StatusCode)
+		statusText := http.StatusText(resp.StatusCode)
+		// a HEAD should not have a response body to read (content always empty)
+		content, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return resp.StatusCode, fmt.Errorf("could not call URL \"%s\", got status %d: %s, and error reading response body: %w", url, resp.StatusCode, statusText, err)
+		}
+		return resp.StatusCode, fmt.Errorf("could not call URL \"%s\", got status %d: %s, content: \"%s\"", url, resp.StatusCode, statusText, content)
 	}
-	return nil
+	return resp.StatusCode, nil
 }
 
 var urls = []string{
@@ -37,7 +69,58 @@ var urls = []string{
 	"https://www.fastly.com/",
 }
 
+type Storage struct {
+	DB *sqlx.DB
+}
+
+func getDatabase() (*Storage, error) {
+	db, err := sqlx.Connect("sqlite3", ":memory:")
+	if err != nil {
+		return &Storage{}, err
+	}
+	return &Storage{
+		DB: db,
+	}, nil
+}
+
+func (db *Storage) applyMigrations() error {
+	_, err := db.DB.Exec(schema)
+	if err != nil {
+		return fmt.Errorf("could not apply schema migrations to database: %w", err)
+	}
+	return nil
+}
+
+const sqlInsert = `
+INSERT INTO call
+(url, created_at, status, success)
+VALUES
+(:url, :created_at, :status, :success)
+;
+`
+
+func (db *Storage) record(call *Call) error {
+	result, err := db.DB.NamedExec(sqlInsert, call)
+	if err != nil {
+		return fmt.Errorf("could not insert new Call record into database: %w", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("created new Call record but could not get last insert ID: %w", err)
+	}
+	call.ID = uint(id)
+	return nil
+}
+
 func run(args []string, _ io.Writer) error {
+	db, err := getDatabase()
+	if err != nil {
+		return err
+	}
+	err = db.applyMigrations()
+	if err != nil {
+		return err
+	}
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	var (
 		url = flags.String("url", "", "which URL to use when checking if internet connection is working?")
@@ -51,12 +134,21 @@ func run(args []string, _ io.Writer) error {
 	}
 
 	for _, url := range urls {
-		err := isUrlUp(url)
+		statusCode, err := isUrlUp(url)
+		call := &Call{
+			URL:     url,
+			Status:  uint(statusCode),
+			Success: err != nil,
+		}
 		if err != nil {
-			fmt.Printf("%s is down! %s\n", url, err)
+			fmt.Printf("%s is down! Status %d, %s\n", url, statusCode, err)
 			continue
 		}
 		fmt.Printf("%s is up\n", url)
+		err = db.record(call)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
