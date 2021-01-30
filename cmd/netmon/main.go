@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -19,7 +20,7 @@ const (
 )
 
 const schema = `
-CREATE TABLE call (
+CREATE TABLE IF NOT EXISTS call (
   id integer PRIMARY KEY,
   created_at datetime DEFAULT current_timestamp,
   url text,
@@ -74,7 +75,12 @@ type Storage struct {
 }
 
 func getDatabase() (*Storage, error) {
-	db, err := sqlx.Connect("sqlite3", ":memory:")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return &Storage{}, err
+	}
+	dsn := path.Join(home, databaseFilePath)
+	db, err := sqlx.Connect("sqlite3", dsn)
 	if err != nil {
 		return &Storage{}, err
 	}
@@ -134,21 +140,22 @@ func run(args []string, _ io.Writer) error {
 	}
 
 	for _, url := range urls {
-		statusCode, err := isUrlUp(url)
+		statusCode, headErr := isUrlUp(url)
 		call := &Call{
-			URL:     url,
-			Status:  uint(statusCode),
-			Success: err != nil,
+			URL:       url,
+			Status:    uint(statusCode),
+			Success:   headErr == nil,
+			CreatedAt: time.Now(),
 		}
-		if err != nil {
-			fmt.Printf("%s is down! Status %d, %s\n", url, statusCode, err)
-			continue
-		}
-		fmt.Printf("%s is up\n", url)
 		err = db.record(call)
 		if err != nil {
 			return err
 		}
+		if headErr != nil {
+			fmt.Printf("%s is down! Status %d, %s\n", url, statusCode, headErr)
+			continue
+		}
+		fmt.Printf("%s is up\n", url)
 	}
 	return nil
 }
