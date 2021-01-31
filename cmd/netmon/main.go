@@ -35,16 +35,26 @@ type Call struct {
 	ID        uint      `json:"id" db:"id"`
 	URL       string    `json:"url" db:"url"`
 	CreatedAt time.Time `json:"createdAt" db:"created_at"`
-	Status    uint      `json:"status" db:"status"`
-	Success   bool      `json:"success" db:"success"`
+	Status    int       `json:"status" db:"status"`   // raw HTTP status code
+	Success   bool      `json:"success" db:"success"` // was HTTP call successful?
 	Error     string    `json:"error" db:"error"`
 }
 
-func isUrlUp(url string) (int, error) {
+func (c *Call) String() string {
+	return fmt.Sprintf("Call{ID:%d, URL:%s, CreatedAt:%s, Status:%d, Success:%t, Error:`%s`}", c.ID, c.URL, c.CreatedAt, c.Status, c.Success, c.Error)
+}
+
+func isUrlUp(url string) *Call {
+	call := &Call{
+		URL:       url,
+		Success:   false,
+		CreatedAt: time.Now(),
+	}
 	resp, err := http.Head(url)
 	if err != nil {
 		// happens on "connection refused"
-		return 0, err
+		call.Error = err.Error()
+		return call
 	}
 	// a HEAD should not have a response body to close
 	defer func() {
@@ -53,16 +63,20 @@ func isUrlUp(url string) (int, error) {
 			fmt.Printf("could not close response body: %s", err)
 		}
 	}()
-	if resp.StatusCode != http.StatusOK {
+
+	call.Status = resp.StatusCode
+	call.Success = resp.StatusCode == http.StatusOK
+	if !call.Success {
 		statusText := http.StatusText(resp.StatusCode)
 		// a HEAD should not have a response body to read (content always empty)
 		content, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return resp.StatusCode, fmt.Errorf("could not call URL \"%s\", got status %d: %s, and error reading response body: %w", url, resp.StatusCode, statusText, err)
+			call.Error = fmt.Errorf("failed reading response body: %w", err).Error()
+		} else {
+			call.Error = fmt.Errorf("HTTP %s, Content: \"%s\"", statusText, content).Error()
 		}
-		return resp.StatusCode, fmt.Errorf("could not call URL \"%s\", got status %d: %s, content: \"%s\"", url, resp.StatusCode, statusText, content)
 	}
-	return resp.StatusCode, nil
+	return call
 }
 
 var urls = []string{
@@ -142,22 +156,13 @@ func run(args []string, _ io.Writer) error {
 	}
 
 	for _, url := range urls {
-		statusCode, headErr := isUrlUp(url)
-		call := &Call{
-			URL:       url,
-			Status:    uint(statusCode),
-			Success:   headErr == nil,
-			CreatedAt: time.Now(),
-		}
-		if !call.Success {
-			call.Error = headErr.Error()
-		}
+		call := isUrlUp(url)
 		err = db.record(call)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not record call result: %v: %w", call, err)
 		}
-		if headErr != nil {
-			fmt.Printf("%s is down! Status %d, %s\n", url, statusCode, headErr)
+		if !call.Success {
+			fmt.Printf("%s is down! %v\n", url, call)
 			continue
 		}
 		fmt.Printf("%s is up\n", url)
