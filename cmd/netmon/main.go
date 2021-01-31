@@ -113,6 +113,18 @@ func (db *Storage) applyMigrations() error {
 	return nil
 }
 
+func getDatabaseAndMigrate() (*Storage, error) {
+	db, err := getDatabase()
+	if err != nil {
+		return nil, err
+	}
+	err = db.applyMigrations()
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
 const sqlInsert = `
 INSERT INTO call
 (url, created_at, status, success, error)
@@ -121,7 +133,7 @@ VALUES
 ;
 `
 
-func (db *Storage) record(call *Call) error {
+func (db *Storage) saveResult(call *Call) error {
 	result, err := db.DB.NamedExec(sqlInsert, call)
 	if err != nil {
 		return fmt.Errorf("could not insert new Call record into database: %w", err)
@@ -134,12 +146,17 @@ func (db *Storage) record(call *Call) error {
 	return nil
 }
 
-func run(args []string, _ io.Writer) error {
-	db, err := getDatabase()
+func (db *Storage) callAndSaveResult(url string) (*Call, error) {
+	call := isUrlUp(url)
+	err := db.saveResult(call)
 	if err != nil {
-		return err
+		return call, fmt.Errorf("could not save Call result: %v: %w", call, err)
 	}
-	err = db.applyMigrations()
+	return call, nil
+}
+
+func run(args []string, _ io.Writer) error {
+	db, err := getDatabaseAndMigrate()
 	if err != nil {
 		return err
 	}
@@ -156,10 +173,10 @@ func run(args []string, _ io.Writer) error {
 	}
 
 	for _, url := range urls {
-		call := isUrlUp(url)
-		err = db.record(call)
+		call, err := db.callAndSaveResult(url)
 		if err != nil {
-			return fmt.Errorf("could not record call result: %v: %w", call, err)
+			// failed to save Call, but keep going to display results to user
+			fmt.Println(err)
 		}
 		if !call.Success {
 			fmt.Printf("%s is down! %v\n", url, call)
