@@ -26,18 +26,20 @@ CREATE TABLE IF NOT EXISTS call (
   url text,
   status integer,
   success boolean,
-  error text
+  error text,
+  duration_ms decimal(10,3)
 );
 `
 
 // model to keep history in DB
 type Call struct {
-	ID        uint      `json:"id" db:"id"`
-	URL       string    `json:"url" db:"url"`
-	CreatedAt time.Time `json:"createdAt" db:"created_at"`
-	Status    int       `json:"status" db:"status"`   // raw HTTP status code
-	Success   bool      `json:"success" db:"success"` // was HTTP call successful?
-	Error     string    `json:"error" db:"error"`
+	ID         uint      `json:"id" db:"id"`
+	URL        string    `json:"url" db:"url"`
+	CreatedAt  time.Time `json:"createdAt" db:"created_at"`
+	Status     int       `json:"status" db:"status"`   // raw HTTP status code
+	Success    bool      `json:"success" db:"success"` // was HTTP call successful?
+	Error      string    `json:"error" db:"error"`
+	DurationMS float64   `json:"duration" db:"duration"`
 }
 
 func (c *Call) String() string {
@@ -50,7 +52,9 @@ func isUrlUp(url string) *Call {
 		Success:   false,
 		CreatedAt: time.Now(),
 	}
+	start := time.Now()
 	resp, err := http.Head(url)
+	call.DurationMS = getMillisecondsSince(start)
 	if err != nil {
 		// happens on "connection refused"
 		call.Error = err.Error()
@@ -127,9 +131,9 @@ func getDatabaseAndMigrate() (*Storage, error) {
 
 const sqlInsert = `
 INSERT INTO call
-(url, created_at, status, success, error)
+(url, created_at, status, success, error, duration_ms)
 VALUES
-(:url, :created_at, :status, :success, :error)
+(:url, :created_at, :status, :success, :error, :duration)
 ;
 `
 
@@ -185,6 +189,13 @@ func run(args []string, _ io.Writer) error {
 		fmt.Printf("%s is up\n", url)
 	}
 	return nil
+}
+
+func getMillisecondsSince(start time.Time) float64 {
+	duration := time.Since(start)
+	// https://stackoverflow.com/a/41503910
+	ms := float64(duration) / float64(time.Millisecond)
+	return ms
 }
 
 func main() {
