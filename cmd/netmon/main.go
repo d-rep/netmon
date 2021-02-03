@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"gitlab.com/drep/netmon/web"
+
 	"gitlab.com/drep/netmon/storage"
 )
 
@@ -76,12 +78,17 @@ func run(args []string, _ io.Writer) error {
 	}
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	var (
-		url = flags.String("url", "", "which URL to use when checking if internet connection is working?")
+		url       = flags.String("url", "", "which URL to use when checking if internet connection is working?")
+		servePort = flags.String("serve", "", "give a port to start up an HTTP server that can be used to access previous call results")
 	)
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
 
+	if len(*servePort) > 0 {
+		fmt.Printf("starting http server on port %d\n", *servePort)
+		return web.Serve(*servePort)
+	}
 	if len(*url) != 0 {
 		urls = []string{*url}
 	}
