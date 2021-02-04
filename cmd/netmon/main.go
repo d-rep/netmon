@@ -86,8 +86,8 @@ func run(args []string, _ io.Writer) error {
 	}
 
 	if len(*servePort) > 0 {
-		fmt.Printf("starting http server on port %d\n", *servePort)
-		return web.Serve(*servePort)
+		fmt.Printf("starting http server on port %s\n", *servePort)
+		return web.Serve(*servePort, db)
 	}
 	if len(*url) != 0 {
 		urls = []string{*url}

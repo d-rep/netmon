@@ -32,7 +32,7 @@ type Call struct {
 	Status     int       `json:"status" db:"status"`   // raw HTTP status code
 	Success    bool      `json:"success" db:"success"` // was HTTP call successful?
 	Error      string    `json:"error" db:"error"`
-	DurationMS float64   `json:"duration" db:"duration"`
+	DurationMS float64   `json:"durationMs" db:"duration_ms"`
 }
 
 func (c *Call) String() string {
@@ -97,4 +97,27 @@ func (db *Storage) SaveCall(call *Call) error {
 	}
 	call.ID = uint(id)
 	return nil
+}
+
+const selectCall = `
+select
+	url,
+	created_at,
+	status,
+	success,
+	error,
+	duration_ms
+from call
+order by created_at desc
+limit %d;
+`
+
+func (db *Storage) GetRecentCalls(count uint8) ([]*Call, error) {
+	var calls []*Call
+	sqlRecent := fmt.Sprintf(selectCall, count)
+	err := db.DB.Select(&calls, sqlRecent)
+	if err != nil {
+		return nil, fmt.Errorf("failure with GetRecentCalls: %w", err)
+	}
+	return calls, nil
 }
