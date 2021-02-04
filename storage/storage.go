@@ -82,7 +82,7 @@ const sqlInsert = `
 INSERT INTO call
 (url, created_at, status, success, error, duration_ms)
 VALUES
-(:url, :created_at, :status, :success, :error, :duration)
+(:url, :created_at, :status, :success, :error, :duration_ms)
 ;
 `
 
