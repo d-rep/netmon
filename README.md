@@ -32,3 +32,8 @@ You can also run the utility to serve up an API that exposes past results.
 netmon -serve 8080
 ```
 
+And then hit the endpoint:
+```shell
+curl http://localhost:8080
+```
+

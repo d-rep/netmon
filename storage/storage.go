@@ -101,6 +101,7 @@ func (db *Storage) SaveCall(call *Call) error {
 
 const selectCall = `
 select
+	id,
 	url,
 	created_at,
 	status,
