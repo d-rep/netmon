@@ -24,7 +24,7 @@ func Serve(port string, db *storage.Storage) error {
 		}
 		return c.Render("index", fiber.Map{
 			"Title": "Network Monitor",
-			"calls": calls,
+			"Calls": calls,
 		})
 	})
 

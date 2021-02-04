@@ -1,5 +1,31 @@
 <!DOCTYPE html>
 <body>
 <h1>{{.Title}}</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>URL</th>
+                <th>Created At</th>
+                <th>Status</th>
+                <th>Success</th>
+                <th>Error</th>
+                <th>Duration (milliseconds)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Calls}}
+            <tr>
+                <td>{{.ID}}</td>
+                <td>{{.URL}}</td>
+                <td>{{.CreatedAt}}</td>
+                <td>{{.Status}}</td>
+                <td>{{.Success}}</td>
+                <td>{{.Error}}</td>
+                <td>{{.DurationMS}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
 </body>
 </html>
