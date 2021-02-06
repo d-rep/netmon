@@ -25,6 +25,7 @@ netmon -url https://www.google.com
 To query the database:
 ```shell
 sqlite3 ~/netmon.db 'select * from call order by created_at desc limit 10;'
+sqlite3 ~/netmon.db 'select * from summary;'
 ```
 
 You can also run the utility to serve up an API that exposes past results.

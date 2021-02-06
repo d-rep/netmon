@@ -22,6 +22,19 @@ CREATE TABLE IF NOT EXISTS call (
   error text,
   duration_ms decimal(10,3)
 );
+
+CREATE VIEW IF NOT EXISTS summary AS
+select
+	date(created_at) as dt,
+	substr('SunMonTueWedThuFriSat',strftime('%w',created_at)*3+1,3) as day_of_week,
+	count(*) as total, 
+	SUM(CASE success WHEN TRUE THEN 1 ELSE 0 END) AS successes,
+	SUM(CASE success WHEN TRUE THEN 0 ELSE 1 END) AS failures,
+	printf("%.2f", avg(duration_ms)) as average_duration_ms,
+	printf("%.2f", max(duration_ms)) as worst_duration_ms
+from call
+group by date(created_at)
+order by date(created_at) desc;
 `
 
 // model to keep history in DB
