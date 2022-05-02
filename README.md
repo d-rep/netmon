@@ -4,7 +4,33 @@ This is a command line utility that can be used to see if you currently have a
 working connection to make HTTP calls to the internet, and keeps history of that
 data.
 
-Requires CGO because data is kept in a sqlite database.
+## Setup
+
+Install [golang](https://go.dev)
+
+## Compile
+
+```shell
+make build
+```
+
+## Run
+
+This will ping external hosts like Cloudflare, and write to the database.
+
+```shell
+./netmon
+```
+
+Start a webapp to show the history.  Uses [go-fiber](https://github.com/gofiber/fiber)
+
+```shell
+./netmon -serve 8080
+```
+
+---
+
+Requires CGO because data is kept in a SQLite database.
 
 ```shell
 git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/"
@@ -37,4 +63,5 @@ And then hit the endpoint:
 ```shell
 curl http://localhost:8080
 ```
+
 
