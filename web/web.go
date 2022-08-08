@@ -5,8 +5,8 @@ import (
 
 	"github.com/gofiber/template/html"
 
+	"github.com/d-rep/netmon/storage"
 	"github.com/gofiber/fiber/v2"
-	"gitlab.com/drep/netmon/storage"
 )
 
 func Serve(port string, db *storage.Storage) error {

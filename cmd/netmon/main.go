@@ -9,9 +9,9 @@ import (
 	"os"
 	"time"
 
-	"gitlab.com/drep/netmon/web"
+	"github.com/d-rep/netmon/web"
 
-	"gitlab.com/drep/netmon/storage"
+	"github.com/d-rep/netmon/storage"
 )
 
 const (
