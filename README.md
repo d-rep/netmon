@@ -39,3 +39,16 @@ To query the database directly:
 sqlite3 $HOME/netmon.db 'select * from call order by created_at desc limit 10;'
 sqlite3 $HOME/netmon.db 'select * from summary;'
 ```
+
+## Install
+
+Alternatively, you can install the binary without cloning the repository using this command:
+
+```shell
+go install github.com/d-rep/netmon/cmd/netmon@latest
+```
+
+Then you can run the newly installed utility:
+```shell
+$GOPATH/bin/netmon -url https://www.google.com
+```
