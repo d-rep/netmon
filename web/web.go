@@ -66,5 +66,5 @@ func GetStatus(db *storage.Storage) http.HandlerFunc {
 func Serve(port string, db *storage.Storage) error {
 	http.Handle("/", GetIndex(db))
 	http.Handle("/status", GetStatus(db))
-	return http.ListenAndServe("localhost:"+port, nil)
+	return http.ListenAndServe("0.0.0.0:"+port, nil)
 }
