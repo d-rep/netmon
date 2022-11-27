@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 const databaseFilePath = "netmon.db"
@@ -62,7 +61,7 @@ func getDatabase() (*Storage, error) {
 		return &Storage{}, err
 	}
 	dsn := path.Join(home, databaseFilePath)
-	db, err := sqlx.Connect("sqlite3", dsn)
+	db, err := sqlx.Connect(driverName, dsn)
 	if err != nil {
 		return &Storage{}, err
 	}
