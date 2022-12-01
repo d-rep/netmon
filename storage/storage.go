@@ -38,13 +38,14 @@ order by date(created_at) desc;
 
 // model to keep history in DB
 type Call struct {
-	ID         uint      `json:"id" db:"id"`
-	URL        string    `json:"url" db:"url"`
-	CreatedAt  time.Time `json:"createdAt" db:"created_at"`
-	Status     int       `json:"status" db:"status"`   // raw HTTP status code
-	Success    bool      `json:"success" db:"success"` // was HTTP call successful?
-	Error      string    `json:"error" db:"error"`
-	DurationMS float64   `json:"durationMs" db:"duration_ms"`
+	ID           uint      `json:"id" db:"id"`
+	URL          string    `json:"url" db:"url"`
+	CreatedAtRaw time.Time `json:"createdAtRaw" db:"-"`
+	CreatedAt    string    `json:"createdAt" db:"created_at"` // Time is cast to a common format (RFC3339) before saving to the database to have consistency between drivers
+	Status       int       `json:"status" db:"status"`        // raw HTTP status code
+	Success      bool      `json:"success" db:"success"`      // was HTTP call successful?
+	Error        string    `json:"error" db:"error"`
+	DurationMS   float64   `json:"durationMs" db:"duration_ms"`
 }
 
 func (c *Call) String() string {

@@ -19,10 +19,12 @@ const (
 )
 
 func isUrlUp(url string) *storage.Call {
+	ts := time.Now()
 	call := &storage.Call{
-		URL:       url,
-		Success:   false,
-		CreatedAt: time.Now(),
+		URL:          url,
+		Success:      false,
+		CreatedAtRaw: ts,
+		CreatedAt:    ts.Format(time.RFC3339),
 	}
 	start := time.Now()
 	resp, err := http.Head(url)

@@ -26,7 +26,7 @@ func GetIndex(db *storage.Storage) http.HandlerFunc {
 		log.Fatal(err)
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		calls, err := db.GetRecentCalls(10)
+		calls, err := db.GetRecentCalls(50)
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -48,7 +48,7 @@ func GetIndex(db *storage.Storage) http.HandlerFunc {
 
 func GetStatus(db *storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		calls, err := db.GetRecentCalls(10)
+		calls, err := db.GetRecentCalls(50)
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
